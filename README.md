@@ -1,5 +1,5 @@
 # DelayBufferNetwork
-DelayBufferNetworks are objects which allow the user to calcute delay propagation on a temporal network
+DelayBufferNetworks are objects which allow the user to calculate delay propagation on a temporal network
 
 The code in delaybuffernetwork.py contains the main DelayBufferNetwork object. 
 Temporal network/Dynamic graph/Evolutionary graph data can be used to initialize a network, so long as it is in ijt-event format (Agent i is connected to agent j at time t at event event_id).
