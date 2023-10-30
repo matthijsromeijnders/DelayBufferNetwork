@@ -5,9 +5,6 @@ import scipy.optimize
 import warnings
 warnings.filterwarnings("ignore")
 
-
-
-
 def generate_dbn_schedule(N: int, agent_types:list, time_range: tuple, time_step: float, event_rules: list, events_per_timestep: int, agent_numbers_of_type : dict = {},  randomness_events: bool=False, randomness_rule: bool =False):
     """Generates a schedule for a DBN. 
 
