@@ -458,7 +458,7 @@ class DelayBufferNetwork():
 
             # Adjust delays, and timesteps of each event
             # Delay of an event is the delay of the most delayed agent, cannot be lower than 0, the same can be said for the event time, however, it increases with the latest agent. It cannot decrease.
-            current_event_dict["current_event_delay"] = max(0, delay_minus_buffer) + added_delay
+            self.event_dict[unique_event_iterator]["current_event_delay"] = max(0, delay_minus_buffer) + added_delay
             event_time = current_event_dict["t"]
 
             if dynamic_topology:
@@ -466,8 +466,6 @@ class DelayBufferNetwork():
                 self.event_time_array[self.event_time_array[:, 0] == unique_event_iterator, 1] += max(0, delay_minus_buffer) + added_delay
 
             # Change agent delays for the future according to the current max delay at the event.
-            #network_at_event_after_delay_propagation = self.network[self.network["event_id"]==unique_event_iterator]
-            
             if dynamic_topology:
                 events_later_than_current_event = np.nonzero(self.event_time_array[:,1] >= event_time)
                 self.event_time_array = self.event_time_array[self.event_time_array[:, 1].argsort()] # Could be quicker by using something that sorts only one row of the array I think.
