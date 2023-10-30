@@ -1,3 +1,5 @@
+# Author: Matthijs Romeijnders ~ 2023. ~95% attribution to University of Utrecht, ~5% independent.
+
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
@@ -39,8 +41,10 @@ class DelayBufferNetwork():
             self.system = system
             if system == "df":
                 self.df = True
+                self.dict = False
             if system == "array":
-                self.array = True    
+                self.array = True 
+                self.dict = False   
                 
             self.unique_agents = self.get_unique_agents()
             self.last_event_list = self.unique_agents
@@ -49,7 +53,15 @@ class DelayBufferNetwork():
             self.centralities = None
             self.uniform_sampling = uniform_time_range
             self.time_range = None
-            self.set_time_range()
+            self.buffer_budget = 0
+            self.event_dict = {}
+            self.time_event_dict = {}
+            self.total_events = None
+            self.agent_delays = None
+            self.event_time_array = None
+            self.event_added_delay_array = None
+            self.event_buffer_array = None
+            self.delay_magnitude = 0
             
             if not load:
                 #self.add_self_edges()
@@ -58,7 +70,6 @@ class DelayBufferNetwork():
                 if not dont_build_df:
                     self.construct_agent_delays()
                     self.construct_agent_delays_realtime()
-                
                 
                 self.build_event_dict()
                 self.build_event_arrays()
@@ -69,16 +80,7 @@ class DelayBufferNetwork():
             self.propagator_matrices = []
             self.centralities = None
             self.time_range = None
-        self.buffer_budget = 0
-        self.event_dict = {}
-        self.time_event_dict = {}
-        self.total_events = None
-        self.agent_delays = None
-        self.event_time_array = None
-        self.event_added_delay_array = None
-        self.event_buffer_array = None
-        self.delay_magnitude = 0
-        
+        self.set_time_range()
     
     def save_dicts(self, path):
         """Saves the dictionaries to a path.
@@ -276,10 +278,12 @@ class DelayBufferNetwork():
     def prepare_delays(self):
         """Prepares delays, gives them 0 value.
         """
-        np.nan_to_num(self.network["delay"], 0)  
-        np.nan_to_num(self.network["current_event_delay"], 0)  
-        self.network["delay"] = 0
-        self.network["current_event_delay"] = 0
+        try:
+            np.nan_to_num(self.network["delay"], 0)  
+            np.nan_to_num(self.network["current_event_delay"], 0)  
+        except KeyError:
+            self.network["delay"] = 0
+            self.network["current_event_delay"] = 0
     
     
     def add_delay(self, tau=1):
@@ -346,7 +350,7 @@ class DelayBufferNetwork():
 
         Args:
         buffer (float) : Buffer size.
-        epsilon (float) : Scale of uniform distribution around which buffers are sampled, such that buffers are sampled from a uniform distribution between B-epsilon and B+epsilon.
+        epsilon (float) : (DOES NOT WORK FOR DF SYSTEM) Scale of uniform distribution around which buffers are sampled, such that buffers are sampled from a uniform distribution between B-epsilon and B+epsilon.
         using_dict(bool, optional): Set true to add the delays to the dict-based graph system. Defaults to True.
         using_df(bool, optional): Set true to add the delays to the array-based system. Defaults to False.
         using_df(bool, optional): Set true to add the delays to the DF system. Defaults to False.
@@ -354,21 +358,22 @@ class DelayBufferNetwork():
         self.buffer_budget = 0
         if self.dict:
             for i in range(self.total_events):
-                buffer = max(0, np.random.uniform(buffer-epsilon, buffer+epsilon))
+                buffer_per_event = max(0, np.random.uniform(buffer-epsilon, buffer+epsilon))
                 self.event_dict[i]["buffer"] = buffer
-                self.buffer_budget += buffer
-                self.event_buffer_array[i] = buffer
-                
+                self.buffer_budget += buffer_per_event
+                self.event_buffer_array[i] = buffer_per_event
+     
         if self.array:
             if epsilon != 0:
                 for i in range(self.total_events):
-                    buffer = max(0, np.random.uniform(buffer-epsilon, buffer+epsilon))
-                    self.event_buffer_array[i] = buffer
-                    self.buffer_budget += buffer
+                    buffer_per_event = max(0, np.random.uniform(buffer-epsilon, buffer+epsilon, 1))
+                    
+                    self.event_buffer_array[i] = buffer_per_event
+                    self.buffer_budget += buffer_per_event
             else:
-                self.event_buffer_array = buffer
-                self.buffer_budget = buffer * len(self.event_buffer_array)
-                
+                self.event_buffer_array = np.ones((self.event_buffer_array.shape)) * buffer
+                self.buffer_budget = np.sum(self.event_buffer_array)
+ 
         if self.df:
             np.nan_to_num(self.network["buffer"], 0)  
             self.network["buffer"] = buffer
